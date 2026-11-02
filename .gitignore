@@ -1,6 +1,9 @@
 # 依赖
 node_modules/
 
+# 本项目只用 pnpm，误用 npm 生成的锁文件不纳入版本管理
+package-lock.json
+
 # 构建产物（由 scripts/build.mjs 生成）
 lib/
 
