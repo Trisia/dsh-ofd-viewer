@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "OFD 预览",
+    "description": "在右侧栏与输入框附件中直接阅读 OFD 文档，内置 ofdrw 阅读器并提供 ofd_read 摘要工具。"
+  }
+}

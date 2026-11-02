@@ -1,0 +1,53 @@
+{
+  "name": "dsh-ofd-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OFD 文档预览：在 DSH 右侧栏与输入框附件中直接阅读 OFD，并提供 ofd_read 摘要工具",
+  "exports": {
+    ".": "./lib/host/index.js",
+    "./client": "./lib/client/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "lib/**",
+    "locale/*.json",
+    "icon.svg",
+    "cordis.patch.yml"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-sidebar-documentpreview",
+        "@deepseek-ai/dsh-client-ui-attachment"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-fs": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.2",
+    "@types/node": "^24.7.0",
+    "@types/react": "^19.1.0",
+    "esbuild": "^0.28.2",
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "@ofdrw/ofdrw-viewer-ui": "^0.1.7"
+  }
+}

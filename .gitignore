@@ -1,0 +1,32 @@
+# 依赖
+node_modules/
+
+# 构建产物（由 scripts/build.mjs 生成）
+lib/
+
+# npm 缓存
+.build-cache/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 本地验证素材（示例 OFD、上游解包等）
+.probe/
+*.tgz
+
+# 编辑器与系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# 测试与覆盖率产物
+coverage/
+*.tsbuildinfo
+
+# 本地环境变量
+.env
+.env.*
+!.env.example

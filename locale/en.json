@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "OFD Viewer",
+    "description": "Preview OFD documents in the right Sidebar and from composer attachments, with the ofdrw reader plus an ofd_read summary tool."
+  }
+}
