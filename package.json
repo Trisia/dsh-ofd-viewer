@@ -1,9 +1,32 @@
 {
-  "name": "dsh-ofd-viewer",
+  "name": "@cliven/dsh-ofd-viewer",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "OFD 文档预览：在 DSH 右侧栏与输入框附件中直接阅读 OFD，并提供 ofd_read 摘要工具",
+  "description": "OFD document preview for DSH: read OFD in the Sidebar, the OFD panel and composer attachments, plus an ofd_read tool",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Trisia/dsh-ofd-viewer.git"
+  },
+  "homepage": "https://github.com/Trisia/dsh-ofd-viewer#readme",
+  "bugs": {
+    "url": "https://github.com/Trisia/dsh-ofd-viewer/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "ofd",
+    "ofdrw",
+    "document-preview"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "dsh": ">=0.2.1-rc.2 <0.3.0-0"
+  },
   "exports": {
     ".": "./lib/host/index.js",
     "./client": "./lib/client/client.js",
@@ -34,6 +57,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "prepack": "node scripts/build.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test test/*.test.mjs"
   },
@@ -49,5 +73,8 @@
   },
   "dependencies": {
     "@ofdrw/ofdrw-viewer-ui": "^0.1.7"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }

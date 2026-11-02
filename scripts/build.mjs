@@ -18,7 +18,7 @@ const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)))
 /** 构建输出根目录。 */
 const libRoot = join(packageRoot, 'lib')
 /** 模块标识：浏览器模块表按包名登记。 */
-const MODULE_ID = 'dsh-ofd-viewer'
+const MODULE_ID = '@cliven/dsh-ofd-viewer'
 
 /** 内联宿主代码读取自身清单的调用（esbuild 不改写它，保留原样）。 */
 const HOST_VERSION_READ = 'createRequire(import.meta.url)("../package.json")'

@@ -1,4 +1,4 @@
 - insert:
-    - id: dsh-ofd-viewer
-      name: 'dsh-ofd-viewer'
+    - id: '@cliven/dsh-ofd-viewer'
+      name: '@cliven/dsh-ofd-viewer'
       config: {}

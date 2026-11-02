@@ -13,7 +13,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 test('package.json 声明了宿主半、客户端半与列表元数据', () => {
   const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
-  assert.equal(manifest.name, 'dsh-ofd-viewer')
+  assert.equal(manifest.name, '@cliven/dsh-ofd-viewer')
   assert.equal(manifest.exports['.'], './lib/host/index.js')
   assert.equal(manifest.exports['./client'], './lib/client/client.js')
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml')
@@ -26,8 +26,8 @@ test('package.json 声明了宿主半、客户端半与列表元数据', () => {
 test('cordis.patch.yml 插入唯一插件行', () => {
   const patch = readFileSync(join(root, 'cordis.patch.yml'), 'utf8')
   assert.match(patch, /- insert:/)
-  assert.match(patch, /id: dsh-ofd-viewer/)
-  assert.match(patch, /name: 'dsh-ofd-viewer'/)
+  assert.match(patch, /id: '@cliven\/dsh-ofd-viewer'/)
+  assert.match(patch, /name: '@cliven\/dsh-ofd-viewer'/)
 })
 
 test('中英文列表元数据齐全', () => {

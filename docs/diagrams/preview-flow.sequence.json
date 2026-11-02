@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "OFD 预览数据流：草稿附件与文件预览",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1000,
+      620
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户",
+      "sublabel": "拖入或点选 .ofd"
+    },
+    {
+      "id": "rail",
+      "type": "frontend",
+      "label": "附件栏",
+      "sublabel": "priority -100"
+    },
+    {
+      "id": "panel",
+      "type": "frontend",
+      "label": "OFD 阅读面板",
+      "sublabel": "main 插槽"
+    },
+    {
+      "id": "body",
+      "type": "frontend",
+      "label": "侧栏渲染体",
+      "sublabel": "document preview"
+    },
+    {
+      "id": "viewer",
+      "type": "external",
+      "label": "OFDViewer",
+      "sublabel": "ofdrw-viewer-ui"
+    },
+    {
+      "id": "host",
+      "type": "backend",
+      "label": "Host Remote",
+      "sublabel": "workspaceFiles"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 290,
+      "label": "草稿附件路径"
+    },
+    {
+      "from": 300,
+      "to": 430,
+      "label": "文件预览路径"
+    },
+    {
+      "from": 440,
+      "to": 520,
+      "label": "渲染与卸载"
+    }
+  ],
+  "messages": [
+    {
+      "id": "drop-file",
+      "from": "user",
+      "to": "rail",
+      "y": 170,
+      "label": "拖入 .ofd",
+      "variant": "emphasis"
+    },
+    {
+      "id": "upload-done",
+      "from": "rail",
+      "to": "user",
+      "y": 204,
+      "label": "卡片进入 ready 态",
+      "variant": "return"
+    },
+    {
+      "id": "open-ofd",
+      "from": "user",
+      "to": "rail",
+      "y": 238,
+      "label": "点「查看」",
+      "variant": "default"
+    },
+    {
+      "id": "handoff",
+      "from": "rail",
+      "to": "panel",
+      "label": "show() + selectPanel()",
+      "variant": "default",
+      "y": 272
+    },
+    {
+      "id": "click-file",
+      "from": "user",
+      "to": "body",
+      "y": 306,
+      "label": "文件树点 .ofd",
+      "variant": "emphasis"
+    },
+    {
+      "id": "read-bytes",
+      "from": "body",
+      "to": "host",
+      "y": 340,
+      "label": "readBytes(sid, path)",
+      "variant": "default"
+    },
+    {
+      "id": "bytes",
+      "from": "host",
+      "to": "body",
+      "y": 374,
+      "label": "Uint8Array",
+      "variant": "return"
+    },
+    {
+      "id": "mount-from-file",
+      "from": "panel",
+      "to": "viewer",
+      "y": 408,
+      "label": "file.arrayBuffer()",
+      "variant": "default"
+    },
+    {
+      "id": "mount-from-body",
+      "from": "body",
+      "to": "viewer",
+      "y": 442,
+      "label": "mountViewer(bytes)",
+      "variant": "default"
+    },
+    {
+      "id": "loaded",
+      "from": "viewer",
+      "to": "body",
+      "y": 476,
+      "label": "content.loaded(version)",
+      "variant": "return"
+    },
+    {
+      "id": "destroy",
+      "from": "body",
+      "to": "viewer",
+      "y": 510,
+      "label": "卸载时 destroy()",
+      "variant": "dashed"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "rail",
+      "from": 165,
+      "to": 250
+    },
+    {
+      "participant": "panel",
+      "from": 250,
+      "to": 460
+    },
+    {
+      "participant": "body",
+      "from": 330,
+      "to": 520
+    },
+    {
+      "participant": "host",
+      "from": 390,
+      "to": 450
+    },
+    {
+      "participant": "viewer",
+      "from": 460,
+      "to": 520
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "草稿附件路径",
+      "items": [
+        "文件只在浏览器里，尚未经过 Host",
+        "上传完成才出现「查看」"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "文件预览路径",
+      "items": [
+        "读取 sideBar 预览的字节后交给同一个 mountViewer",
+        "卸载即 destroy 并移除样式"
+      ]
+    }
+  ]
+}

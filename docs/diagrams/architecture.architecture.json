@@ -1,0 +1,266 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "dsh-ofd-viewer 插件架构",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "user-file",
+      "type": "external",
+      "label": "OFD 文件",
+      "sublabel": "工作区 / 草稿附件",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "host",
+      "type": "backend",
+      "label": "宿主半",
+      "sublabel": "lib/host/index.js",
+      "pos": [
+        260,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "自包含 ESM"
+    },
+    {
+      "id": "font-route",
+      "type": "backend",
+      "label": "字体路由",
+      "sublabel": "/ofd-viewer-plugin/fonts",
+      "pos": [
+        260,
+        150
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "ofd-read",
+      "type": "backend",
+      "label": "ofd_read 工具",
+      "sublabel": "元数据 + 分页文本",
+      "pos": [
+        260,
+        450
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "客户端半",
+      "sublabel": "lib/client/client.js",
+      "pos": [
+        500,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "panel",
+      "type": "frontend",
+      "label": "OFD 阅读面板",
+      "sublabel": "main 插槽",
+      "pos": [
+        760,
+        120
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "renderer",
+      "type": "frontend",
+      "label": "侧栏文档渲染体",
+      "sublabel": "sidebar.right.tab.document",
+      "pos": [
+        760,
+        470
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "attachments",
+      "type": "frontend",
+      "label": "输入框附件栏",
+      "sublabel": "priority -100 覆盖宿主",
+      "pos": [
+        760,
+        300
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "viewer",
+      "type": "external",
+      "label": "ofdrw-viewer-ui",
+      "sublabel": "@ofdrw/ofdrw-viewer-ui",
+      "pos": [
+        1090,
+        300
+      ],
+      "size": [
+        200,
+        64
+      ],
+      "tag": "MIT"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Harness Host（Node）",
+      "wraps": [
+        "host",
+        "font-route",
+        "ofd-read"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Harness Web（浏览器）",
+      "wraps": [
+        "client",
+        "panel",
+        "renderer",
+        "attachments",
+        "viewer"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "file-to-host",
+      "from": "user-file",
+      "to": "host",
+      "label": "路径"
+    },
+    {
+      "id": "host-to-read",
+      "from": "host",
+      "to": "ofd-read",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "host-to-font",
+      "from": "host",
+      "to": "font-route",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "host-to-client",
+      "from": "host",
+      "to": "client",
+      "label": "字体 HTTP"
+    },
+    {
+      "id": "client-to-panel",
+      "from": "client",
+      "to": "panel",
+      "variant": "dashed"
+    },
+    {
+      "id": "client-to-renderer",
+      "from": "client",
+      "to": "renderer",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "client-to-attachments",
+      "from": "client",
+      "to": "attachments",
+      "variant": "dashed"
+    },
+    {
+      "id": "panel-to-viewer",
+      "from": "panel",
+      "to": "viewer",
+      "label": "挂载 OFDViewer",
+      "labelDy": -40,
+      "toSide": "left",
+      "fromSide": "right"
+    },
+    {
+      "id": "renderer-to-viewer",
+      "from": "renderer",
+      "to": "viewer",
+      "label": "渲染页面",
+      "labelDy": 40,
+      "toSide": "left",
+      "fromSide": "right"
+    },
+    {
+      "id": "attachments-to-panel",
+      "from": "attachments",
+      "to": "panel",
+      "label": "查看",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDy": -18
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "宿主半",
+      "items": [
+        "字体静态路由带连接鉴权",
+        "ofd_read 只抽 TextCode 文本，不做 OCR",
+        "自包含打包：插件解析不到 dsh 安装目录的包"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "客户端半",
+      "items": [
+        "声明 .ofd 文档渲染器（priority: extension）",
+        "主面板与附件栏两个入口",
+        "React 由宿主模块表运行时提供"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "阅读器",
+      "items": [
+        "官方 npm 依赖，构建期内联进 client.js",
+        "主题固定浅色，字体走宿主路由",
+        "卸载时 destroy 释放画布"
+      ]
+    }
+  ]
+}

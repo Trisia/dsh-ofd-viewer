@@ -13,7 +13,7 @@ import { extensionOf, formatSize, isOfdName, parseFileAddress } from './utils.js
 const NS = 'ofdViewer'
 
 /** 侧栏文档预览实现 id，同时是渲染体插槽 key。 */
-const RENDERER_ID = 'dsh-ofd-viewer/ofd'
+const RENDERER_ID = '@cliven/dsh-ofd-viewer/ofd'
 
 /** 主面板 key。 */
 const PANEL_KEY = 'ofd-viewer'
@@ -111,7 +111,7 @@ function apply(ctx: ClientContext): void {
 
 /** 浏览器模块表登记的模块面。 */
 const module: ClientModule = {
-  name: 'dsh-ofd-viewer',
+  name: '@cliven/dsh-ofd-viewer',
   // 布局服务用于切换主面板；声明为必需依赖，Cordis 会在提供后激活本插件
   inject: ['slots', 'locale', 'layout'],
   apply,
