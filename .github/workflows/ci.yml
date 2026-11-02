@@ -1,0 +1,64 @@
+name: CI
+
+# 每次向分支推送时校验：依赖可安装、类型检查通过、构建成功、单元测试通过。
+# 打 v* 标签时由 publish.yml 完成同样的校验并发布，这里跳过，避免同一提交跑两遍。
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - 'v*'
+  # 在 GitHub 上发起 PR 时也跑一遍，即使来源是 fork。
+  pull_request:
+
+# 同一 ref 的旧运行让位给最新推送，只保留最新一次结果。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# 校验只需要读取仓库内容。
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Typecheck, build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # pnpm 版本由 package.json 的 packageManager 字段决定，不能传 version，否则 action 报版本冲突。
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      # Node 版本取 .nvmrc 中的值，保持 CI 与本地开发一致。
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # 必须用 frozen-lockfile：pnpm-lock.yaml 是唯一可信的依赖快照。
+      # 允许执行的安装脚本（esbuild）记录在 pnpm-workspace.yaml 的 allowBuilds 中。
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # 必须先构建再测试：test/core.test.mjs 直接导入构建产物 lib/host/ofd-read.js，
+      # 而 lib/ 不入库。构建失败时后续步骤不再执行。
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      # 确认产物齐全；缺失说明构建脚本没生成预期文件。
+      - name: Check build output exists
+        run: |
+          test -f lib/host/index.js
+          test -f lib/client/client.js
+          test -d lib/client/assets/fonts

@@ -27,6 +27,7 @@
   "engines": {
     "dsh": ">=0.2.1-rc.2 <0.3.0-0"
   },
+  "packageManager": "pnpm@11.24.0",
   "exports": {
     ".": "./lib/host/index.js",
     "./client": "./lib/client/client.js",
@@ -73,8 +74,5 @@
   },
   "dependencies": {
     "@ofdrw/ofdrw-viewer-ui": "^0.1.7"
-  },
-  "allowScripts": {
-    "esbuild@0.28.2": true
   }
 }
