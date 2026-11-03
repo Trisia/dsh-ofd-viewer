@@ -1,146 +1,125 @@
-# dsh-ofd-viewer
+<p align="center">
+  <img src="./icon.svg" width="72" height="72" alt="OFD 预览插件图标">
+</p>
 
-让 DeepSeek Harness Web 界面直接阅读 **OFD**（GB/T 33190 版式文档）的插件；同时提供
-`ofd_read` 工具，让模型不渲染界面也能读到 OFD 的元数据与分页文本。
+<h1 align="center">dsh-ofd-viewer</h1>
+
+<p align="center">
+  <strong>在 DSH 里直接看 OFD</strong><br>
+  DeepSeek Harness Web 的 OFD（GB/T 33190 版式文档）预览插件：右侧栏、独立面板、输入框附件三处入口都能直接阅读 OFD，另带一个 <code>ofd_read</code> 工具，让模型不渲染界面也能读到 OFD 的元数据与分页文本。
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@cliven/dsh-ofd-viewer"><img src="https://img.shields.io/npm/v/@cliven/dsh-ofd-viewer?logo=npm" alt="npm 版本"></a>
+  <a href="https://github.com/Trisia/dsh-ofd-viewer/actions/workflows/ci.yml?query=branch%3Amaster"><img src="https://github.com/Trisia/dsh-ofd-viewer/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI 构建状态"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/Trisia/dsh-ofd-viewer" alt="MIT License"></a>
+  <a href="./package.json"><img src="https://img.shields.io/badge/dsh-%E2%89%A50.2.1--rc.2-4B32C3" alt="DSH 版本要求：>= 0.2.1-rc.2"></a>
+</p>
+
+<p align="center">
+  <img src="./docs/preview.png" alt="DSH 右侧栏文档预览中渲染的 OFD 文档：左侧缩略图，中间页面对开显示，右侧是 OFD 阅读器工具栏，可切换大纲、签章、图层、查找" width="100%">
+</p>
+
+[English](README.en.md) | 中文
+
+## 能做什么
+
+DSH 自带的文档预览覆盖 PDF、Word 等格式，但国内公文、电子发票、合同与档案大量使用 OFD。
+装上前，`.ofd` 在右侧栏里只显示成二进制；装上后：
+
+- **右侧栏直接看**：文件树、交付卡片、`@文件` 引用里点 `.ofd`，与 PDF/Word 预览并列，走同一套文档预览框架。
+- **草稿附件先看**：输入框附件卡片上直接有「查看」，文件还没提交给模型也能先翻一遍。
+- **独立 OFD 面板**：面板右上角 `＋` 选择任意本地 OFD，支持「内嵌」切换版式。
+- **模型读得到**：`ofd_read` 工具返回页数、版本、文档信息与每页文本，不用渲染也能回答“这张发票的金额是多少”。
+- **功能全开**：连续滚动、缩放/旋转、页码跳转、缩略图、大纲、书签、附件、图层显示控制、全文查找、文本选中复制、打印、图片导出、原始 OFD 导出、签章覆盖层与验证。
+- **中文不缺字**：内置思源宋体/黑体，文档没有内嵌字体时也不会整页空白。
 
 阅读器基于官方 [ofdrw-viewer-ui](https://github.com/ofdrw/ofdrw-viewer) 的 npm 包
 [`@ofdrw/ofdrw-viewer-ui`](https://github.com/ofdrw/ofdrw-viewer/blob/main/packages/ofdrw-viewer-ui/README.md)（MIT）。
 
-![插件架构](docs/diagrams/architecture.png)
+## 安装
 
----
+在 DSH 的 **设置 → 插件 → 添加插件** 中填入插件名与版本号：
 
-## 功能
+```text
+@cliven/dsh-ofd-viewer@0.1.0
+```
 
-### 界面入口
+也可以用命令行安装：
+
+```bash
+dsh plugin --profile web add @cliven/dsh-ofd-viewer@0.1.0
+```
+
+版本号固定为当前发布版本（现在是 `0.1.0`），升级时替换 `@` 后面的数字即可。
+
+安装后重启 DSH Web 服务并刷新页面：客户端启动图在进程启动时组合，已经运行的进程不会自动加载新插件。
+
+从源码构建并挂到本地 profile 的方法见[开发文档](./docs/DEVELOPMENT.md#挂到-dsh-profile)。
+
+## 使用
+
+### 三处入口
 
 | 入口 | 操作 | 说明 |
 | --- | --- | --- |
 | **输入框附件** | 拖入或选择 `.ofd` → 附件卡片点「查看」 | 草稿文件尚未提交也能先看内容 |
-| **OFD 阅读面板** | 面板右上角 `＋` 选择本地文件 | 支持「内嵌」切换版式（带边框的卡片式 / 铺满） |
+| **OFD 面板** | 面板右上角 `＋` 选择本地文件 | 支持「内嵌」切换版式（带边框的卡片式 / 铺满） |
 | **右侧栏文档预览** | 文件树、交付卡片、`@文件` 引用里点 `.ofd` | 与 PDF/Word 预览并列，复用同一套文档预览框架 |
 
-### 阅读器能力
+草稿附件的「查看」入口示意：
 
-随官方组件全开：连续滚动、缩放/旋转、页码跳转、缩略图、大纲、书签、附件、图层显示控制、
-全文查找、文本选中复制、打印、图片导出、原始 OFD 导出、签章覆盖层与验证。
+<p align="center">
+  <img src="./docs/composer-attachment.png" alt="输入框上方的 OFD 附件卡片：左侧 OFD 图标，中间显示文件名与大小，右侧是「查看」按钮与移除按钮" width="100%">
+</p>
 
-### `ofd_read` 工具（给模型用）
+独立面板：面板右上角 `＋` 选择文件，`✕` 关闭。
+
+### 阅读器操作
+
+| 操作 | 效果 |
+| --- | --- |
+| 滚轮 / 拖动 | 连续滚动翻页 |
+| 缩略图、大纲、书签 | 左侧栏切换，点击跳转 |
+| 图层、签章、附件 | 右侧栏切换，签章可做覆盖层验证 |
+| 全文查找 | 工具栏搜索框，命中处高亮并可跳转 |
+| 选中文字 | 选中后可复制 |
+| 打印、导出 | 打印当前文档、导出图片、导出原始 OFD |
+
+### `ofd_read` 工具
+
+给模型用的工具，参数与返回如下：
 
 | 参数 | 类型 | 说明 |
 | --- | --- | --- |
 | `path` | string，必填 | OFD 路径，相对路径以会话工作目录为基准 |
-| `pages` | string | 页码选择：`"3"`、`"1-5"`、`"1,3,7-9"`；省略时取前若干页 |
+| `pages` | string | 页码选择：`"3"`、`"1-5"`、`"1,3,7-9"`；可带页内区间，如 `"4#2001-4000"`、`"4-6#1-500"`；省略时取前若干页 |
 | `maxPages` | integer | 最多返回页数，默认 30 |
+| `maxCharsPerPage` | integer | 每页最多返回的字符数（按 Unicode 字符计），默认 4000 |
 | `includeText` | boolean | `false` 时只返回元数据，默认 `true` |
 
-返回页数、OFD 版本、文档信息（DocInfo）、`returnedPages`、每页文本与解压失败的条目；
-单页超过 4000 字符会截断并给出 `truncatedChars`。
+返回页数、OFD 版本、文档信息（DocInfo）、`returnedPages`、每页文本与解压失败的条目。
 
----
+**长页不会丢内容**：一页超过 `maxCharsPerPage` 时按段返回，该页带有
+`offset`（本段起始字符数）、`totalChars`（本页总字符数）、`hasMore`，
+以及可直接回传的 `next`，例如：
 
-## 安装
-
-插件以 **Bundle** 形式安装到 DSH profile（本目录即插件包目录）：
-
-- 在 Harness 里用 `plugin_manager` → `install_bundle`，目标填本目录**绝对路径**；或
-- 命令行：`dsh plugin --profile <name> install`（先把本包加入该 profile 的依赖）。
-
-安装后需要**重新启动 dsh / 刷新页面**：客户端启动图在进程启动时组合，已运行的进程不会自动加载新插件。
-
-## 环境要求
-
-| 项 | 要求 |
-| --- | --- |
-| DSH | 提供 `webServer`、`tools`、`fs`、`workingDirectory` 服务的 Web 版（`dsh --profile web`） |
-| 浏览器 | Chrome ≥ 67 / 其他现代浏览器（阅读器依赖 Canvas 2D） |
-| Node（构建期） | ≥ 22 |
-
----
-
-## 目录结构
-
-```
-.
-├── src/
-│   ├── host/                 宿主半
-│   │   ├── index.ts            字体静态路由 + ofd_read 工具注册
-│   │   └── ofd-read.ts         OFD（ZIP + XML）文本抽取，仅用 node:zlib
-│   ├── client/               客户端半
-│   │   ├── entry.ts            浏览器模块入口（登记工厂）
-│   │   ├── index.tsx           插件 apply：声明渲染器、注册面板与附件栏
-│   │   ├── contracts.ts        宿主客户端接口的最小类型契约
-│   │   ├── viewer.ts           官方阅读器加载、挂载与销毁
-│   │   ├── styles.ts           插件样式与官方样式注入
-│   │   ├── components/         附件栏、侧栏渲染体、主面板、阅读器表面等组件
-│   │   └── locale.ts           zh/en 文案
-│   ├── commonjs.ts            宿主模块 require 访问器（运行时取 React）
-│   ├── styles/                官方阅读器样式字符串模块（构建时生成）
-│   └── types/                 宿主运行时包的最小类型声明
-├── assets/fonts/              内置思源宋体/黑体（OFL 1.1，见 NOTICE.md）
-├── scripts/build.mjs          esbuild 构建脚本
-├── test/                      单元测试与 OFD 样例
-├── docs/
-│   ├── DESIGN.md              设计文档（决策、数据流、取舍）
-│   └── diagrams/              交互式架构图与时序图（.html 可缩放/搜索/切换主题）
-├── locale/                    插件列表显示名与描述
-├── icon.svg                   插件图标
-├── cordis.patch.yml           Bundle 补丁
-└── lib/                       构建产物（不入库）
+```json
+{ "page": 4, "offset": 1, "totalChars": 5170, "hasMore": true, "next": "4#4001-5170" }
 ```
 
----
+再次调用时把 `next` 传给 `pages` 即可读完该页剩余部分，所有片段按顺序拼接等于整页原文。
+字符数按 Unicode 字符（码点）计，生僻字与 emoji 都算 1 个字符，不会把字切成半个。
 
-## 开发
+## 更多
 
-```bash
-npm install        # 安装依赖（含官方阅读器 @ofdrw/ofdrw-viewer-ui）
-npm run typecheck  # tsc 严格模式
-npm test           # 纯逻辑单测：文件名判断、资源地址、OFD 文本抽取、清单一致性
-npm run build      # 生成 lib/host 与 lib/client
-```
+- 数据流、插槽与实现取舍：[设计文档](./docs/DESIGN.md)
+- 构建、发布与调试：[开发文档](./docs/DEVELOPMENT.md)
+- 没有预览、缺字、深色主题等排查：[常见问题](./docs/FAQ.md)
 
-修改代码后重新 `npm run build`，再在 Harness 里停用/启用本插件（或重启 dsh）以加载新产物。
+## 许可
 
-### 构建产出
+本插件代码以 [MIT License](./LICENSE) 发布，Copyright (c) 2026 Quan Guanyu。
 
-| 产物 | 说明 |
-| --- | --- |
-| `lib/host/index.js` | 宿主半，**自包含**（profile 安装的插件解析不到 dsh 安装目录的包） |
-| `lib/host/ofd-read.js` | 文本抽取，可单独用于调试 |
-| `lib/client/client.js` | 客户端半，约 3.3 MB，内含官方阅读器 |
-| `lib/client/assets/fonts/` | 内置字体，由宿主路由 `/ofd-viewer-plugin/fonts/*` 提供 |
-
-### 常见问题
-
-**面板打开了，但显示“没有待预览的 OFD 文件”**
-先通过输入框附件卡片上的「查看」或面板右上角 `＋` 选择文件；右侧栏预览走的是另一条路径（见下方）。
-
-**文件名、正文发虚或缺字**
-先确认 `/ofd-viewer-plugin/fonts/source-han-serif-sc.woff2` 返回 200；若为 404，
-说明宿主半没激活（重启 dsh 后仍未激活，检查插件日志中的导入错误）。
-
-**深色主题下阅读器是浅色**
-这是刻意设计：白色纸张与工具栏文字在深色宿主下依然清晰。
-
-**右侧栏预览打不开**
-需要宿主的文档预览能力（`sidebar.right.tab.document` 插槽与 `.ofd` 渲染器注册）；若宿主版本过旧没有该扩展点，请改用附件入口或面板 `＋`。
-
----
-
-## 兼容性与边界
-
-- **只抽文本，不做 OCR**：`ofd_read` 抽取 `<TextCode>` 文本；扫描件请先用 MinerU 等工具解析。
-- **体积**：内置字体约 19 MB + 阅读器约 3.3 MB。可删除 `assets/fonts/` 并去掉字体路由瘦身，代价是缺字文档整页空白。
-- **主题固定浅色**：见上方说明。
-- **大文档**：数千页文档首屏会更慢（官方未承诺该规模性能）。
-- **草稿附件**：只有通过宿主校验、上传完成的附件才出现「查看」。
-
-更完整的决策记录、数据流与备选方案见 [docs/DESIGN.md](./docs/DESIGN.md)。
-
----
-
-## 许可证
-
-本插件代码：MIT。官方阅读器 `@ofdrw/ofdrw-viewer-ui`：MIT；
-内置字体思源宋体/黑体：SIL Open Font License 1.1（见 `assets/fonts/NOTICE.md`）。
+内置字体思源宋体/黑体为 SIL Open Font License 1.1（来源与子集范围见
+[assets/fonts/NOTICE.md](./assets/fonts/NOTICE.md)）；阅读器 `@ofdrw/ofdrw-viewer-ui` 同为 MIT。

@@ -1,7 +1,13 @@
 /**
  * 插件入口：声明 .ofd 预览、注册 OFD 面板与输入框附件预览。
  */
-import type { ClientContext, ClientModule, ClientRemote, Translate } from './contracts.js'
+import type {
+  ClientContext,
+  ClientModule,
+  DocumentPreviewsService,
+  Translate,
+  WorkspaceFilesRemote,
+} from './contracts.js'
 import { en, zh } from './locale.js'
 import { mountPluginStyles } from './styles.js'
 import { ComposerAttachments } from './components/ComposerAttachments.js'
@@ -20,6 +26,74 @@ const PANEL_KEY = 'ofd-viewer'
 
 /** 接管预览的文件后缀（小写、不含点）。 */
 const OFD_EXTENSIONS = ['ofd']
+
+/** 宿主注册的 `workspaceFiles` Remote 命名空间服务名（服务名本身含点）。 */
+const WORKSPACE_FILES_SERVICE = 'remote.workspaceFiles'
+
+/** documentPreviews 服务的重试上限（单位 次）。 */
+const PREVIEW_SERVICE_ATTEMPTS = 120
+
+/** 两次重试的间隔（单位 毫秒）。 */
+const PREVIEW_SERVICE_INTERVAL_MS = 50
+
+/**
+ * 读取 `remote.workspaceFiles` 命名空间服务。
+ *
+ * 宿主把它注册成独立服务，服务名里带点，无法写成 `ctx.remote.workspaceFiles`：
+ * `remote` 只是命名空间前缀、不是已提供的服务，点号写法会一直报
+ * cannot get property，因此按服务名取值。
+ *
+ * @param ctx 客户端上下文
+ * @returns 命名空间服务；尚未挂载时返回 undefined
+ */
+function workspaceFilesOf(ctx: ClientContext): WorkspaceFilesRemote | undefined {
+  const service = ctx.get(WORKSPACE_FILES_SERVICE)
+  if (typeof service !== 'object' || service === null) return undefined
+  return service as WorkspaceFilesRemote
+}
+
+/**
+ * 等侧栏文档预览服务可用后登记渲染器。
+ *
+ * documentPreviews 由 @deepseek-ai/dsh-client-ui-sidebar-documentpreview 在自己的 apply 中提供，
+ * 而启动图按 URL 长度把插件切成若干并行加载的批次，`dsh.client.inject` 只能保证同一批次内的先后。
+ * 两个包可能落在不同批次，下载完成顺序也不固定，因此这里不能只在 apply 时查一次：
+ * 拿不到服务就继续等，服务出现后再登记，超时仍缺失则明确报错，便于定位。
+ *
+ * @param ctx 客户端上下文
+ * @param use 服务可用后的登记回调
+ * @returns 无返回值
+ */
+function watchDocumentPreviews(ctx: ClientContext, use: (previews: DocumentPreviewsService) => void): void {
+  let disposed = false
+  let attempts = 0
+  let timer: ReturnType<typeof setTimeout> | undefined
+  /**
+   * 检查一次服务是否可用。
+   * @returns 无返回值
+   */
+  const check = (): void => {
+    if (disposed) return
+    const previews = ctx.get('documentPreviews') as DocumentPreviewsService | undefined
+    if (previews !== undefined) {
+      use(previews)
+      return
+    }
+    attempts += 1
+    if (attempts >= PREVIEW_SERVICE_ATTEMPTS) {
+      console.error('[ofd-viewer] documentPreviews service never became available; the Sidebar OFD preview stays disabled')
+      return
+    }
+    timer = setTimeout(check, PREVIEW_SERVICE_INTERVAL_MS)
+  }
+  ctx.effect(() => {
+    check()
+    return () => {
+      disposed = true
+      if (timer !== undefined) clearTimeout(timer)
+    }
+  }, 'ofd-viewer: preview service')
+}
 
 /**
  * 插件入口。
@@ -55,8 +129,7 @@ function apply(ctx: ClientContext): void {
   }, 'ofd-viewer: main panel')
 
   // 侧栏文档预览：声明 .ofd 渲染器并注册渲染体
-  const previews = ctx.get('documentPreviews') as { register(definition: unknown): () => void } | undefined
-  if (previews !== undefined) {
+  watchDocumentPreviews(ctx, (previews) => {
     ctx.effect(
       () =>
         previews.register({
@@ -73,14 +146,20 @@ function apply(ctx: ClientContext): void {
       () =>
         ctx.slots.inject('sidebar.right.tab.document', () =>
           ctx.slots.register({ name: 'sidebar.right.tab.document', key: RENDERER_ID, locale: NS }, (props) => {
-            const remote = ctx.get('remote') as ClientRemote | undefined
-            if (remote === undefined || typeof props.resourceAddress !== 'string') return null
-            return DocumentBody({ resourceAddress: props.resourceAddress, content: props.content, remote, t, scrollportRef: props.scrollportRef })
+            const workspaceFiles = workspaceFilesOf(ctx)
+            if (workspaceFiles === undefined || typeof props.resourceAddress !== 'string') return null
+            return DocumentBody({
+              resourceAddress: props.resourceAddress,
+              content: props.content,
+              workspaceFiles,
+              t,
+              scrollportRef: props.scrollportRef,
+            })
           }),
         ),
       'ofd-viewer: preview body',
     )
-  }
+  })
 
   // 输入框附件栏：接管草稿附件呈现，给 OFD 卡片加「查看」入口
   ctx.effect(
@@ -112,8 +191,9 @@ function apply(ctx: ClientContext): void {
 /** 浏览器模块表登记的模块面。 */
 const module: ClientModule = {
   name: '@cliven/dsh-ofd-viewer',
-  // 布局服务用于切换主面板；声明为必需依赖，Cordis 会在提供后激活本插件
-  inject: ['slots', 'locale', 'layout'],
+  // 布局服务用于切换主面板；声明为必需依赖，Cordis 会在提供后激活本插件。
+  // Remote 命名空间按服务名解析，同样需要声明，否则 ctx.get 取不到。
+  inject: ['slots', 'locale', 'layout', WORKSPACE_FILES_SERVICE],
   apply,
   internal: { isOfdName, extensionOf, formatSize, parseFileAddress },
 }

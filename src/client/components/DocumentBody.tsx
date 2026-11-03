@@ -3,7 +3,7 @@
  */
 import type { ReactNode } from 'react'
 import { requireModule } from '../../commonjs.js'
-import type { ClientRemote, RendererContent, Translate } from '../contracts.js'
+import type { WorkspaceFilesRemote, RendererContent, Translate } from '../contracts.js'
 import { parseFileAddress } from '../utils.js'
 import { mountViewer } from '../viewer.js'
 
@@ -13,8 +13,8 @@ export interface DocumentBodyProps {
   resourceAddress: string
   /** `renderer` 模式的加载请求 */
   content?: RendererContent
-  /** 客户端 Remote 面 */
-  remote: ClientRemote
+  /** Remote 的 `workspaceFiles` 命名空间 */
+  workspaceFiles: WorkspaceFilesRemote
   /** 翻译函数 */
   t: Translate
   /**
@@ -31,7 +31,7 @@ export interface DocumentBodyProps {
  * @param props 组件属性
  * @returns 渲染体
  */
-export function DocumentBody({ resourceAddress, content, remote, t, scrollportRef }: DocumentBodyProps): ReactNode {
+export function DocumentBody({ resourceAddress, content, workspaceFiles, t, scrollportRef }: DocumentBodyProps): ReactNode {
   const { useEffect, useLayoutEffect, useRef, useState } = requireModule<typeof import('react')>('react')
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [failure, setFailure] = useState('')
@@ -47,7 +47,7 @@ export function DocumentBody({ resourceAddress, content, remote, t, scrollportRe
     setFailure('')
     void (async () => {
       const file = parseFileAddress(resourceAddress)
-      const result = await remote.workspaceFiles.readBytes(file.sessionId, file.path, {}, controller.signal)
+      const result = await workspaceFiles.readBytes(file.sessionId, file.path, {}, controller.signal)
       if (disposed) return
       if (!result.ok) {
         setFailure(result.error.message ?? result.error.code ?? 'read failed')

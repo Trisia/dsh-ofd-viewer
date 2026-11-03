@@ -1,3 +1,9 @@
+# 侧栏文档预览的插件行由本包先插入：浏览器半在启动期同步加载，
+# 注册 .ofd 渲染器时 documentPreviews 服务必须已由该行提供，
+# 并且本插件行要在启动表的依赖排序中排到它后面。
+- insert:
+    - id: ui-sidebar-documentpreview
+      name: '@deepseek-ai/dsh-client-ui-sidebar-documentpreview'
 - insert:
     - id: '@cliven/dsh-ofd-viewer'
       name: '@cliven/dsh-ofd-viewer'

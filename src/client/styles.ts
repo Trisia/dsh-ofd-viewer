@@ -12,6 +12,18 @@ const PLUGIN_CSS = `
 .ofd-pv-panel{display:flex;flex-direction:column;width:100%;height:100%;min-height:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-family:var(--dsw-font,sans-serif)}
 .ofd-pv-head{box-sizing:border-box;display:flex;align-items:center;gap:8px;flex:none;height:44px;padding:0 8px 0 16px;border-bottom:.5px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1)}
 .ofd-pv-head-main{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.ofd-pv-actions{display:flex;align-items:center;gap:2px;flex:none;min-width:0;overflow-x:auto;scrollbar-width:thin}
+.ofd-pv-tool{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 6px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font-size:14px;line-height:1;cursor:pointer}
+.ofd-pv-tool:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.ofd-pv-tool:disabled{opacity:.4;cursor:default}
+.ofd-pv-tool[aria-expanded=true],.ofd-pv-tool[aria-pressed=true]{color:var(--dsw-alias-brand-primary)}
+.ofd-pv-page{display:inline-flex;align-items:center;gap:4px;flex:none}
+.ofd-pv-page-input{width:44px;height:28px;box-sizing:border-box;padding:0 4px;border:.5px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;text-align:center}
+.ofd-pv-page-input::-webkit-outer-spin-button,.ofd-pv-page-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ofd-pv-page-total{font-size:12px;color:var(--dsw-alias-label-secondary);white-space:nowrap}
+.ofd-pv-sep{flex:none;width:1px;height:18px;margin:0 4px;background:var(--dsw-alias-border-l2)}
+.ofd-pv-select{flex:none;height:28px;padding:0 4px;border:.5px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;cursor:pointer}
+.ofd-pv-select:disabled{opacity:.4;cursor:default}
 .ofd-pv-name{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px;font-weight:500;color:var(--dsw-alias-label-primary)}
 .ofd-pv-meta{flex:none;font-size:12px;color:var(--dsw-alias-label-secondary)}
 .ofd-pv-badge{flex:none;padding:1px 5px;border-radius:4px;background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-primary-inverted,#fff);font-family:var(--ds-font-family-code,monospace);font-size:10px;line-height:16px;font-weight:600;letter-spacing:.02em}

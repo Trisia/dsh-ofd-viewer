@@ -200,30 +200,32 @@ export interface RemoteFailure {
 /** Remote 调用结果。 */
 export type RemoteResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: RemoteFailure }
 
-/** 客户端 Remote 面中本插件用到的部分。 */
-export interface ClientRemote {
-  readonly workspaceFiles: {
-    /**
-     * 读取完整文件字节。
-     * @param sessionId 会话标识
-     * @param path 工作区路径
-     * @param options 读取选项
-     * @param signal 取消信号
-     * @returns 字节或失败
-     */
-    readBytes(
-      sessionId: SessionId,
-      path: string,
-      options: Record<string, never>,
-      signal?: AbortSignal,
-    ): Promise<RemoteResult<{ readonly data: Uint8Array; readonly version: string }>>
-  }
+/** 客户端 Remote 的 `workspaceFiles` 命名空间中本插件用到的部分。 */
+export interface WorkspaceFilesRemote {
+  /**
+   * 读取完整文件字节。
+   * @param sessionId 会话标识
+   * @param path 工作区路径
+   * @param options 读取选项
+   * @param signal 取消信号
+   * @returns 字节或失败
+   */
+  readBytes(
+    sessionId: SessionId,
+    path: string,
+    options: Record<string, never>,
+    signal?: AbortSignal,
+  ): Promise<RemoteResult<{ readonly data: Uint8Array; readonly version: string }>>
 }
 
 /** 客户端根上下文（只列本插件使用的成员）。 */
 export interface ClientContext {
   /**
    * 读取可选服务。
+   *
+   * 含点号的服务名（如 `remote.workspaceFiles`）由宿主按命名空间独立注册，
+   * 也只能这样按名字取；`ctx.remote.workspaceFiles` 会被当作未注入的服务而报错。
+   *
    * @param name 服务名
    * @returns 服务实例或 undefined
    */

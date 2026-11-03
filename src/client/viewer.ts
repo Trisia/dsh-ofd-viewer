@@ -14,6 +14,8 @@ export interface OfdViewerInstance {
   readonly ready: Promise<unknown>
   /** 销毁实例并释放渲染资源 */
   destroy(): void
+  /** 阅读器根节点（带 `.ofd-viewer` 类） */
+  getRoot(): HTMLElement
 }
 
 /** 官方阅读器模块中本插件用到的部分（其余导出不使用）。 */
@@ -84,9 +86,10 @@ function viewerOptions(container: HTMLElement, source: Uint8Array): OFDViewerOpt
  *
  * @param container 挂载点（需具备确定高度）
  * @param source OFD 字节
+ * @param onViewer 实例创建后的回调；卸载或创建失败时以 null 回调
  * @returns 清理函数：销毁实例并移除本次注入的样式
  */
-export function mountViewer(container: HTMLElement, source: Uint8Array): () => void {
+export function mountViewer(container: HTMLElement, source: Uint8Array, onViewer?: (viewer: OfdViewerInstance | null) => void): () => void {
   let viewer: OfdViewerInstance | undefined
   let unmountStyles: (() => void) | undefined
   let disposed = false
@@ -100,12 +103,14 @@ export function mountViewer(container: HTMLElement, source: Uint8Array): () => v
     .then((module) => {
       if (disposed) return
       container.replaceChildren()
-      viewer = new module.OFDViewer(viewerOptions(container, source))
+      viewer = new module.OFDViewer(viewerOptions(container, source)) as unknown as OfdViewerInstance
+      onViewer?.(viewer)
       viewer.ready.catch((error: unknown) => console.error('[ofd-viewer] open failed', error))
     })
     .catch((error: unknown) => console.error('[ofd-viewer] module load failed', error))
   return () => {
     disposed = true
+    onViewer?.(null)
     try {
       viewer?.destroy()
     } catch (error) {

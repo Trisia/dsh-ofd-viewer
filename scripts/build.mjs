@@ -1,7 +1,8 @@
 /**
  * 构建脚本：把 TS 源码编译为宿主半与浏览器半产物。
  *
- * - lib/host/*.js：Node ESM，自包含打包（profile 安装的插件无法解析 dsh 安装目录的宿主包）；
+ * - lib/host/*.js：Node ESM；DSH 宿主包（cordis、dsh-fs、dsh-tools）不内联，
+ *   交给 DSH 运行时解析——内联版本与宿主版本不一致时插件在加载阶段就会失败；
  * - lib/client/client.js：浏览器 ESM，入口登记到 window.__ModuleLoader__；
  *   官方阅读器 @ofdrw/ofdrw-viewer-ui 是 package.json 里的普通依赖，构建时按需拆成
  *   独立分块在运行时动态 import；React 与 react/jsx-runtime 由宿主模块表提供；
@@ -20,22 +21,25 @@ const libRoot = join(packageRoot, 'lib')
 /** 模块标识：浏览器模块表按包名登记。 */
 const MODULE_ID = '@cliven/dsh-ofd-viewer'
 
-/** 内联宿主代码读取自身清单的调用（esbuild 不改写它，保留原样）。 */
-const HOST_VERSION_READ = 'createRequire(import.meta.url)("../package.json")'
-/** 替换后的构建期常量。 */
-const HOST_VERSION_LITERAL = '({ version: "0.2.1-rc.2" })'
-
 /** 以本项目为基准的 CJS 解析器：把宿主包定位到具体文件，缺失时降级为可选依赖。 */
 const requireResolve = createRequire(join(packageRoot, 'package.json')).resolve
 
 /**
- * 把宿主包解析为具体文件；解析失败时生成一个只抛错的空模块，
- * 让宿主包版本差异导致的缺失不会让整份 TypeScript SDK 打不进包。
+ * 宿主包：交给 DSH 运行时解析，不打进宿主半产物。
+ * 它们不能写进 package.json 的 dependencies——插件管理器按依赖图把包装进 profile 的
+ * node_modules，会盖住宿主自带的同版本包并触发兼容性门禁，所以只能留作裸 import。
+ */
+const HOST_EXTERNALS = new Set(['@deepseek-ai/cordis', '@deepseek-ai/dsh-fs', '@deepseek-ai/dsh-tools'])
+
+/**
+ * 宿主包解析：HOST_EXTERNALS 保持外部引用；其余宿主 SDK 包按构建期安装的版本内联，
+ * 解析失败时生成只抛错的空模块，避免版本差异让整份产物打不进包。
  */
 const optionalHostDependencies = {
   name: 'optional-host-dependencies',
   setup(buildApi) {
     buildApi.onResolve({ filter: /^@deepseek-ai\// }, (args) => {
+      if (HOST_EXTERNALS.has(args.path)) return { path: args.path, external: true }
       try {
         return { path: requireResolve(args.path) }
       } catch {
@@ -127,7 +131,7 @@ writeFileSync(
   `/** 官方 @ofdrw/ofdrw-viewer-ui 样式表（MIT），由 scripts/build.mjs 从依赖包抽取。 */\nexport default ${JSON.stringify(viewerCss)}\n`,
 )
 
-// 宿主半：Node ESM，自包含
+// 宿主半：Node ESM（宿主包保持外部引用）
 const hostResult = await build({
   entryPoints: {
     index: join(packageRoot, 'src/host/index.ts'),
@@ -145,10 +149,9 @@ const hostResult = await build({
   logLevel: 'info',
 })
 
-// 内联宿主 SDK 会读取自身 package.json 获取版本：写盘时替换成构建期常量
 for (const output of hostResult.outputFiles) {
   mkdirSync(dirname(output.path), { recursive: true })
-  writeFileSync(output.path, output.text.replaceAll(HOST_VERSION_READ, HOST_VERSION_LITERAL))
+  writeFileSync(output.path, output.text)
 }
 
 // 浏览器半：ESM bundle（阅读器依赖按需分块）
@@ -177,7 +180,7 @@ writeFileSync(
 // 内置字体：由宿主静态路由提供
 cpSync(join(packageRoot, 'assets/fonts'), join(libRoot, 'client/assets/fonts'), { recursive: true })
 
-// 内联宿主 bundle 读取自身 package.json 时的兜底
+// 产物目录的包描述：让 Node 按 ESM 解析 lib 下的文件
 writeFileSync(
   join(libRoot, 'package.json'),
   `${JSON.stringify({ name: 'dsh-ofd-viewer-lib', private: true, type: 'module' }, null, 2)}\n`,

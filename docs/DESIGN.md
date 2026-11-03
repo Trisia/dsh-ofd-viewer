@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | 浏览器插件以 `window.__ModuleLoader__.load({ id, factory })` 登记，`factory` 必须返回**函数或带 `apply` 的对象** | Harness 客户端模块系统 | 产物不能直接输出 `module.exports`，必须包一层工厂壳 |
 | 浏览器模块表只内置 React、zod、cordis 等白名单模块 | `dsh-web-frontend` 的 `PLATFORM_MODULES` | 第三方库（官方阅读器）无法靠模块表解析，必须打进产物或自带 |
-| profile 安装的插件**无法解析 dsh 安装目录里的宿主包** | pnpm hoisted 布局 + profile 位置 | 宿主半必须自包含打包，不能留裸 import |
+| 宿主 SDK（cordis、`dsh-fs`、`dsh-tools` 等）版本随 DSH 安装变化，内联后会与宿主运行期不一致 | DSH 快速迭代 | 宿主半把这些包留作裸 import，由 profile 的 `node_modules` 解析（与官方插件一致） |
 | 客户端模块不允许 import 宿主客户端包（只能在构建期用类型） | 插件规范 | 组件与插槽类型自持，或用 `import type` |
 | 单值插槽的覆盖**必须显式给更低 priority**，数值最低者渲染 | Cordis 插槽系统 | 接管宿主附件栏需要 `priority: -100` |
 | `ctx.get(name)` 不能取未注入的必需服务 | Cordis 注入 | `layout` 必须写进 `inject` |
@@ -26,7 +26,7 @@
 交互版：[`architecture.html`](./diagrams/architecture.html)（可缩放、搜索、切换深浅色、导出）。
 图源：[`architecture.architecture.json`](./diagrams/architecture.architecture.json)。
 
-Harness Host 侧是自包含的宿主半（字体路由 + `ofd_read`），Harness Web 侧是客户端半
+Harness Host 侧是宿主半（字体路由 + `ofd_read`），Harness Web 侧是客户端半
 （声明渲染器、主面板、附件栏），二者共同驱动 `ofdrw-viewer-ui`。
 
 **两半各自独立**：宿主半没有客户端半也能工作（`ofd_read` 与字体路由），
@@ -42,7 +42,7 @@ Harness 只接受函数或带 `apply` 的对象，而 esbuild 的 IIFE 产物自
 ```js
 window.__DSH_MODULE_LOADER__ ??= window.__ModuleLoader__;
 window.__ModuleLoader__.load({
-  id: 'dsh-ofd-viewer',
+  id: '@cliven/dsh-ofd-viewer',
   factory: (require) => {
     var __dshRequire = require;                    // 宿主模块加载器
     globalThis.__DSH_OFD_VIEWER_REQUIRE__ = require;
@@ -104,13 +104,42 @@ window.__ModuleLoader__.load({
 
 ## 4. 宿主半设计
 
-### 4.1 自包含打包
+### 4.1 宿主包外部引用
 
-profile 里的插件解析不到 dsh 安装目录的宿主包，因此 `lib/host/index.js` 把
-`@deepseek-ai/dsh-fs`、`dsh-tools`、cordis 的运行时内联。副作用：内联的 `dsh-llm`
-会执行 `createRequire(import.meta.url)("../package.json")` 读自身版本，
-在 `lib/host/` 下必然 ENOENT。构建脚本在写盘前把该表达式替换成构建期常量
-`({ version: "0.2.1-rc.2" })`（见 `HOST_VERSION_READ` / `HOST_VERSION_LITERAL`）。
+`lib/host/index.js` 只把本仓库自己的代码与 `dsh-ofd` 无关的小工具打进产物；
+`@deepseek-ai/cordis`、`dsh-fs`、`dsh-tools`、`dsh-llm`、`dsh-typert-protocol`
+由 `scripts/build.mjs` 的 `HOST_EXTERNALS` 标记为 external，保留 `import` 语句，
+运行期由 profile 的 `node_modules` 解析（`package.json` 的 `dependencies` 声明了这些版本）。
+
+早期版本把宿主包内联进来，并用构建期常量替换
+`createRequire(import.meta.url)("../package.json")`。这样做的问题在宿主升级后暴露：
+内联的 `dsh-llm`/`dsh-typert-protocol` 与宿主自身版本不一致时，插件在加载阶段就直接失败
+（`optional dependency @deepseek-ai/dsh-typert-protocol is unavailable`），
+且宿主半不激活时，浏览器半拿不到 `documentPreviews`，侧栏点击 .ofd 会显示
+「该格式文件暂时无法预览」。
+
+### 4.1.1 加载顺序（与 documentPreviews 的时序竞争）
+
+浏览器半注册 .ofd 渲染器时必须拿到 `documentPreviews` 服务，它由
+`@deepseek-ai/dsh-client-ui-sidebar-documentpreview` 在自己的 apply 中提供。
+
+**启动表顺序不等于执行时序。** 启动图的 `entries` 顺序由 Cordis 依赖排序决定，
+但 `client-modules` 在发送脚本前会按 **combo URL 的字节长度**把插件切成多个
+`application` 批次（`partitionComboRecords`），每个批次用独立的
+`<link rel="preload">` 并行下载。批次之间没有先后保证，`dsh.client.inject`
+也只在同一批次内生效。本插件与文档预览分属不同批次时，插件 apply 时
+`documentPreviews` 可能还不存在。
+
+因此顺序处理分两层，**以第二层为准**：
+
+- 排序层（尽力而为）：宿主半 `inject` 声明 `clientModules`，让本插件的行在同批次内
+  排到文档预览之后；`cordis.patch.yml` 先插入 `ui-sidebar-documentpreview` 行。
+- 运行时层（兜底）：`watchDocumentPreviews` 在 apply 时拿不到服务就按
+  50 毫秒间隔轮询（最多 120 次），服务出现后再登记，超时则打印明确错误。
+  回归测试见 `test/client-timing.test.mjs`。
+
+早期版本只在 apply 时查一次 `ctx.get('documentPreviews')`，服务晚到就永久跳过注册，
+表现为侧栏点 .ofd 显示「该格式文件暂时无法预览」。
 
 ### 4.2 字体路由
 
@@ -125,8 +154,10 @@ profile 里的插件解析不到 dsh 安装目录的宿主包，因此 `lib/host
 
 ### 4.3 `ofd_read` 工具
 
-输入：`path`（必填）、`pages`（`"3"` / `"1-5"` / `"1,3,7-9"`）、`maxPages`（默认 30 页）、`includeText`。
-输出：`path`、`bytes`、`version`、`docInfo`、`pageCount`、`returnedPages`、`pages[]`、`skippedEntries`。
+输入：`path`（必填）、`pages`（`"3"` / `"1-5"` / `"1,3,7-9"`，可带页内区间 `"4#2001-4000"`）、
+`maxPages`（默认 30 页）、`maxCharsPerPage`（默认 4000 字符）、`includeText`。
+输出：`path`、`bytes`、`version`、`docInfo`、`pageCount`、`returnedPages`、`pages[]`、
+`maxCharsPerPage`、`skippedEntries`。
 
 文本抽取（`src/host/ofd-read.ts`）只用 Node 内置 `zlib`：
 
@@ -136,8 +167,12 @@ profile 里的插件解析不到 dsh 安装目录的宿主包，因此 `lib/host
 4. `DocRoot/Document.xml` 的 `Pages/Page[BaseLoc]` 给出页序；
 5. 每页 `Content.xml` 中按出现顺序抽取 `<ofd:TextCode>` 文本并解实体。
 
-单页文本上限 4000 字符（超出返回 `truncatedChars`）。这是**纯文本抽取，不做 OCR**，
-扫描件需要 MinerU 一类工具。
+**长页分段而不是截断**：一页超过 `maxCharsPerPage` 时按段返回，每页带 `offset`（本段起始
+字符数，从 1 起）、`totalChars`（本页总字符数）、`hasMore`，以及可直接回传 `pages` 的
+`next`（形如 `"4#4001-5170"`）。字符计数按 Unicode 码点（`Array.from(text)`），因此长页
+可以分段读完整，且不会把代理对切成半个字符。
+
+这是**纯文本抽取，不做 OCR**，扫描件需要 MinerU 一类工具。
 
 ## 5. 数据流
 
@@ -162,11 +197,16 @@ profile 里的插件解析不到 dsh 安装目录的宿主包，因此 `lib/host
 ```
 文件树 / 交付卡片 / @文件 引用
   → sidebarRight.openResource('dsh-resource://file/session/<sid>/<path>')
-  → 文档预览按后缀选中渲染器（dsh-ofd-viewer/ofd）
-  → 渲染体 remote.workspaceFiles.readBytes(sid, path)（需要全量字节）
+  → 文档预览按后缀选中渲染器（@cliven/dsh-ofd-viewer/ofd）
+  → 渲染体 ctx.get('remote.workspaceFiles').readBytes(sid, path)（需要全量字节）
   → content.loaded(version) / content.failed() 反馈加载状态
   → mountViewer()
 ```
+
+Remote 命名空间在宿主侧是服务名含点的独立服务（`remote.workspaceFiles`），插件必须把
+`'remote.workspaceFiles'` 写进 `inject` 并用 `ctx.get('remote.workspaceFiles')` 取。
+`ctx.remote.workspaceFiles` 不能用：`remote` 只是命名空间前缀、本身不是已提供的服务，
+这样写会在取属性时抛 `cannot get property "remote.workspaceFiles" without inject`。
 
 草稿附件尚未经过 Host，只能走浏览器 `File` 对象；因此「查看」只在卡片上传完成（`ready`）时可用，
 失败态提供重试。

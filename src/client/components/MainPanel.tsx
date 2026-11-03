@@ -104,39 +104,42 @@ export function MainPanel({ t, store, useSession, close }: MainPanelProps): Reac
   }
   return (
     <div className="ofd-pv-panel">
-      <div className="ofd-pv-head">
-        <div className="ofd-pv-head-main">
-          <span className="ofd-pv-badge">OFD</span>
-          <span className="ofd-pv-name">{file?.name ?? t('title')}</span>
-        </div>
-        <button type="button" className="ofd-pv-close" onClick={() => pickerRef.current?.click()} aria-label={t('file.open')} title={t('file.open')}>
-          ＋
-        </button>
-        <button type="button" className="ofd-pv-close" onClick={close} aria-label={t('panel.closeAria')} title={t('panel.close')}>
-          ✕
-        </button>
-        <input
-          ref={pickerRef}
-          type="file"
-          accept=".ofd,application/ofd"
-          hidden
-          onChange={(event) => {
-            browse(event.target.files?.[0])
-            event.target.value = ''
-          }}
-        />
-      </div>
       {file === undefined ? (
-        <div className="ofd-pv-empty">
-          <div className="ofd-pv-empty-title">{t('panel.empty')}</div>
-          <div>{t('panel.hint')}</div>
-          <button type="button" className="ofd-pv-chip" onClick={() => pickerRef.current?.click()}>
-            {t('file.open')}
-          </button>
-        </div>
+        <>
+          <div className="ofd-pv-head">
+            <div className="ofd-pv-head-main">
+              <span className="ofd-pv-badge">OFD</span>
+              <span className="ofd-pv-name">{t('title')}</span>
+            </div>
+            <button type="button" className="ofd-pv-close" onClick={() => pickerRef.current?.click()} aria-label={t('file.open')} title={t('file.open')}>
+              ＋
+            </button>
+            <button type="button" className="ofd-pv-close" onClick={close} aria-label={t('panel.closeAria')} title={t('panel.close')}>
+              ✕
+            </button>
+          </div>
+          <div className="ofd-pv-empty">
+            <div className="ofd-pv-empty-title">{t('panel.empty')}</div>
+            <div>{t('panel.hint')}</div>
+            <button type="button" className="ofd-pv-chip" onClick={() => pickerRef.current?.click()}>
+              {t('file.open')}
+            </button>
+          </div>
+        </>
       ) : (
+        // 有文件时不再额外渲染面板头：OfdPanel 的工具栏是唯一一条栏
         createElement(createErrorBoundary(), { failureText }, createElement(OfdPanel, { key: `${file.name}-${file.size}-${file.lastModified}`, file, t, close }))
       )}
+      <input
+        ref={pickerRef}
+        type="file"
+        accept=".ofd,application/ofd"
+        hidden
+        onChange={(event) => {
+          browse(event.target.files?.[0])
+          event.target.value = ''
+        }}
+      />
     </div>
   )
 }

@@ -30,8 +30,6 @@ export interface OfdPageText {
   page: number
   /** 该页按出现顺序拼接的可见文本，片段之间以换行分隔 */
   text: string
-  /** 因超过单页字符上限被省略的字符数（未截断时缺省） */
-  truncatedChars?: number
 }
 
 /** 文档信息（OFD.xml 的 DocInfo 子元素，键为元素本地名）。 */
