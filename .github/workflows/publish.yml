@@ -1,0 +1,84 @@
+name: Publish
+
+# 推送 v* 标签时校验并发布到 npm。
+# ci.yml 已用 tags-ignore 跳过 v* 标签，同一提交不会跑两遍；分支推送仍由 ci.yml 负责校验。
+on:
+  push:
+    tags:
+      - 'v*'
+  # 发布失败后可在 Actions 页面针对同一标签重跑，无需重新打标签。
+  workflow_dispatch:
+
+# 同一标签的旧运行让位给最新一次，避免并发推送到 npm 造成冲突。
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+# 校验只需要读取仓库内容；npm 鉴权走 NPM_TOKEN，不依赖 GITHUB_TOKEN 的写权限。
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Typecheck, build, test and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # pnpm 版本由 package.json 的 packageManager 字段决定，不能传 version，否则 action 报版本冲突。
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      # Node 版本取 .nvmrc 中的值，保持 CI 与本地开发一致。
+      # registry-url 用于让 setup-node 生成带 //registry.npmjs.org/:_authToken 的 .npmrc。
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      # 必须用 frozen-lockfile：pnpm-lock.yaml 是唯一可信的依赖快照。
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 标签格式为 v<version>，必须与 package.json 的 version 完全一致，
+      # 否则 npm 会拒绝发布（版本已存在）或发布出与标签不符的版本。
+      - name: Verify tag matches package version
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          version="$(node -p "require('./package.json').version")"
+          if [ "v${version}" != "${tag}" ]; then
+            echo "::error::标签 ${tag} 与 package.json 的 version ${version} 不一致"
+            exit 1
+          fi
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # 先构建再测试：test/core.test.mjs 直接导入构建产物 lib/host/ofd-read.js，而 lib/ 不入库。
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      # 发布前确认版本尚未发布，避免重复发布浪费一次运行。
+      - name: Check version is not published yet
+        run: |
+          pkg="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          if pnpm view "${pkg}@${version}" version >/dev/null 2>&1; then
+            echo "::error::${pkg}@${version} already exists on npm"
+            exit 1
+          fi
+
+      # prepack 脚本会再执行一次构建，确保 npm 包内的 lib/ 是最新的。
+      # --no-git-checks：CI 检出的是标签对应的分离 HEAD，允许在非分支状态下打包。
+      # --access public：包使用 @cliven 作用域，必须是 public 才能公开安装。
+      - name: Publish to npm
+        run: pnpm publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
