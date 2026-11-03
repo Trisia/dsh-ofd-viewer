@@ -127,8 +127,12 @@ export function MainPanel({ t, store, useSession, close }: MainPanelProps): Reac
           </div>
         </>
       ) : (
-        // 有文件时不再额外渲染面板头：OfdPanel 的工具栏是唯一一条栏
-        createElement(createErrorBoundary(), { failureText }, createElement(OfdPanel, { key: `${file.name}-${file.size}-${file.lastModified}`, file, t, close }))
+        // 有文件时不再额外渲染标题行：OfdPanel 的工具栏是唯一一条栏
+        createElement(
+          createErrorBoundary(),
+          { failureText },
+          createElement(OfdPanel, { key: `${file.name}-${file.size}-${file.lastModified}`, file, t, close }),
+        )
       )}
       <input
         ref={pickerRef}

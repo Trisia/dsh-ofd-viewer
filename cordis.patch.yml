@@ -1,9 +1,10 @@
-# 侧栏文档预览的插件行由本包先插入：浏览器半在启动期同步加载，
-# 注册 .ofd 渲染器时 documentPreviews 服务必须已由该行提供，
-# 并且本插件行要在启动表的依赖排序中排到它后面。
-- insert:
-    - id: ui-sidebar-documentpreview
-      name: '@deepseek-ai/dsh-client-ui-sidebar-documentpreview'
+# 只插入本插件自己的行。
+#
+# 侧栏文档预览面板（ui-sidebar-documentpreview）由宿主 @deepseek-ai/dsh-web-app
+# 的补丁层无条件插入，本包不重复声明：重复 insert 会让该宿主组件出现在本包的
+# 组件清单里，卸载时 plugin-manager 认为「组合包的组件仍在运行」而拒绝移除。
+# 与它的加载顺序由 package.json 的 dsh.client.inject 保证（启动表按依赖排序），
+# 客户端另有 documentPreviews 服务可用性轮询兜底。
 - insert:
     - id: '@cliven/dsh-ofd-viewer'
       name: '@cliven/dsh-ofd-viewer'

@@ -4,7 +4,6 @@
 import type { ReactNode } from 'react'
 import { requireModule } from '../../commonjs.js'
 import type { Translate } from '../contracts.js'
-import { formatSize } from '../utils.js'
 import { ViewerSurface, type ViewerInstance } from './ViewerSurface.js'
 import { ViewerToolbar, type ToolbarViewer, type ViewerToolbarLabels } from './ViewerToolbar.js'
 
@@ -71,7 +70,6 @@ export function OfdPanel({ file, t, close }: OfdPanelProps): ReactNode {
       {/* 面板只有这一条工具栏：阅读器内置工具栏已在挂载时关闭 */}
       <ViewerToolbar
         name={file.name}
-        sizeText={formatSize(file.size)}
         viewer={viewer}
         failureText={failureText}
         inline={inline}

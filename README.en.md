@@ -75,7 +75,7 @@ To build from source and link it into a local profile, see
 
 | Entry | How | Notes |
 | --- | --- | --- |
-| **Composer attachment** | Drop or pick a `.ofd`, then click **View** on the attachment card | Read a draft before it is submitted |
+| **Composer attachment** | Drop or pick a `.ofd`, then click **View** on the attachment card | Read a draft before it is submitted; pasted images keep their thumbnails |
 | **OFD panel** | `＋` in the panel header to pick a local file | Toggle between full width and an inline card |
 | **Sidebar document preview** | Click a `.ofd` in the file tree, a delivery card or an `@file` reference | Sits beside PDF/Word previews and reuses the same framework |
 
@@ -84,8 +84,6 @@ The draft attachment entry point:
 <p align="center">
   <img src="./docs/composer-attachment.png" alt="An OFD attachment card above the composer: OFD icon, file name and size, a View button and a remove button" width="100%">
 </p>
-
-The standalone panel: `＋` in the panel header opens a file, `✕` closes it.
 
 ### Reader controls
 

@@ -83,17 +83,42 @@ export interface SlotProps {
    * @returns 无返回值
    */
   onRetryFile?: (id: string) => void
+  /** 图片拖入限制（宿主 DropOverlay 文案用） */
+  dropLimits?: DropLimits
 }
 
-/** 浏览器草稿附件。 */
-export interface ComposerAttachment {
+/** 图片拖入限制。 */
+export interface DropLimits {
+  /** 单条消息允许的图片张数（单位 张） */
+  readonly count: number
+  /** 单条消息图片总大小上限文案 */
+  readonly size: string
+}
+
+/** 草稿内文件附件。 */
+export interface ComposerFileAttachment {
   /** 种类 */
-  readonly kind: 'file' | 'image'
+  readonly kind: 'file'
   /** 草稿内标识 */
   readonly id: string
   /** 浏览器文件 */
   readonly file: File
 }
+
+/** 草稿内图片附件。 */
+export interface ComposerImageAttachment {
+  /** 种类 */
+  readonly kind: 'image'
+  /** 草稿内标识 */
+  readonly id: string
+  /** 浏览器文件 */
+  readonly file: File
+  /** 缩略图与灯箱用的本地对象 URL */
+  readonly previewUrl: string
+}
+
+/** 浏览器草稿附件。 */
+export type ComposerAttachment = ComposerFileAttachment | ComposerImageAttachment
 
 /** 单个附件的上传状态。 */
 export type DraftFileUpload =

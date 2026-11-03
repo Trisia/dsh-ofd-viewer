@@ -35,6 +35,14 @@ export const zh: LocaleDict = {
   'renderer.title': 'OFD 阅读器',
   'renderer.failed': '无法打开该 OFD：{message}',
   'drop.title': '松手即可添加文件',
+  'drop.disabled': '此处不能拖入文件',
+  'drop.limits': '松手即可添加文件（最多 {count} 张图片，共 {size}）',
+  'image.openOriginal': '查看原图',
+  'image.original': '原图',
+  'image.pending': '待发送图片',
+  'image.remove': '移除 {name}',
+  'image.close': '关闭',
+  'file.label': '文件',
   'file.open': '选择 OFD 文件',
 }
 
@@ -70,5 +78,13 @@ export const en: LocaleDict = {
   'renderer.title': 'OFD reader',
   'renderer.failed': 'This OFD cannot be opened: {message}',
   'drop.title': 'Drop to attach files',
+  'drop.disabled': 'Files cannot be dropped here',
+  'drop.limits': 'Drop to attach files (up to {count} images, {size} total)',
+  'image.openOriginal': 'View the original image',
+  'image.original': 'Original image',
+  'image.pending': 'Pending image',
+  'image.remove': 'Remove {name}',
+  'image.close': 'Close',
+  'file.label': 'File',
   'file.open': 'Choose an OFD file',
 }

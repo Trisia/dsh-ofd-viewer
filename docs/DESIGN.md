@@ -98,9 +98,13 @@ window.__ModuleLoader__.load({
 | 文档渲染体 | `sidebar.right.tab.document`（keyed，key = 实现 id） | 用 `props.content.loaded()/failed()` 反馈加载状态；`scrollportRef` 上报自己的滚动容器 |
 | 主面板 | `main`（keyed，key = `ofd-viewer`） | 读取当前会话「待预览 OFD」；无会话时回退到最近一次选择 |
 | 输入框附件栏 | `conversation.input.attachments`（single） | **`priority: -100` 覆盖宿主实现**；保留拖放、移除、重试等宿主行为 |
+| 图片缩略图 | 同上（附件栏内部） | 图片类草稿按其 `previewUrl` 渲染 64×64 缩略图，点击弹出原图灯箱（Esc 关闭） |
+| 文件卡片 | 同上（附件栏内部） | 非图片附件渲染文件卡片；`.ofd` 卡片额外提供「查看」 |
 
-附件栏接管是"覆盖而非新增"，因此必须完整还原宿主卡片形态（文件名、大小、移除、上传进度），
-否则会丢失宿主原有交互。
+附件栏接管是"覆盖而非新增"，因此必须完整还原宿主的全部形态：图片缩略图与原图灯箱、
+文件卡片（文件名、大小、移除、上传进度、重试）、拖放遮罩文案，否则会丢失宿主原有交互。
+宿主 `ComposerAttachments` 主动按 `kind` 分流，草稿附件因此分为两类：
+`file` 带 `File`，`image` 另带 `previewUrl`（宿主生成的本地对象 URL），缩略图直接用它渲染。
 
 ## 4. 宿主半设计
 
@@ -133,10 +137,18 @@ window.__ModuleLoader__.load({
 因此顺序处理分两层，**以第二层为准**：
 
 - 排序层（尽力而为）：宿主半 `inject` 声明 `clientModules`，让本插件的行在同批次内
-  排到文档预览之后；`cordis.patch.yml` 先插入 `ui-sidebar-documentpreview` 行。
+  排到文档预览之后；`package.json` 的 `dsh.client.inject` 声明对
+  `@deepseek-ai/dsh-client-ui-sidebar-documentpreview` 的依赖。
 - 运行时层（兜底）：`watchDocumentPreviews` 在 apply 时拿不到服务就按
   50 毫秒间隔轮询（最多 120 次），服务出现后再登记，超时则打印明确错误。
   回归测试见 `test/client-timing.test.mjs`。
+
+**不要用 `cordis.patch.yml` 插入 `ui-sidebar-documentpreview`。** 该行由宿主
+`@deepseek-ai/dsh-web-app` 的补丁层无条件插入，本包重复 insert 只是多余的；
+更严重的是，`dsh-plugin-manager` 卸载组合包时会把补丁声明的行计入本包组件清单，
+再检查其中是否有存活 fiber——宿主组件始终在运行，于是必然抛 `bundle-in-use`
+（「其他配置仍在使用这个组合包的组件，请先停用它们」），插件从此无法卸载。
+回归测试见 `test/manifest.test.mjs`。
 
 早期版本只在 apply 时查一次 `ctx.get('documentPreviews')`，服务晚到就永久跳过注册，
 表现为侧栏点 .ofd 显示「该格式文件暂时无法预览」。

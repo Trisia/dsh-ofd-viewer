@@ -72,10 +72,8 @@ export interface ToolbarViewer extends ViewerInstance {
 
 /** 工具栏属性。 */
 export interface ViewerToolbarProps {
-  /** 文档名 */
+  /** 文档名，用作工具栏的无障碍名称 */
   name: string
-  /** 文档大小文案；省略时不显示 */
-  sizeText?: string
   /** 阅读器实例；尚未就绪时为 null */
   viewer: ToolbarViewer | null
   /**
@@ -253,13 +251,6 @@ export function ViewerToolbar(props: ViewerToolbarProps): ReactNode {
 
   return (
     <div className="ofd-pv-head">
-      <div className="ofd-pv-head-main">
-        <span className="ofd-pv-badge">OFD</span>
-        <span className="ofd-pv-name" title={props.name}>
-          {props.name}
-        </span>
-        {props.sizeText !== undefined && <span className="ofd-pv-meta">{props.sizeText}</span>}
-      </div>
       <div className="ofd-pv-actions" role="toolbar" aria-label={props.name}>
         <button type="button" className="ofd-pv-tool" aria-label={labels.sidebar} title={labels.sidebar} aria-expanded={sidebarOpen} disabled={!open} onClick={toggleSidebar}>
           ☰

@@ -40,6 +40,15 @@ const PLUGIN_CSS = `
 .ofd-pv-doc{position:relative;display:flex;flex:1;width:100%;height:100%;min-height:0}
 .ofd-pv-doc>.ofd-pv-container{flex:1}
 .ofd-pv-rail{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 8px}
+.ofd-pv-image{position:relative;flex:none;width:64px;height:64px}
+.ofd-pv-thumb{box-sizing:border-box;display:block;width:64px;height:64px;padding:0;overflow:hidden;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-xl);background:var(--dsw-alias-interactive-bg-hover);cursor:zoom-in}
+.ofd-pv-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.ofd-pv-image-remove{position:absolute;top:4px;right:4px;z-index:1;display:grid;place-items:center;width:18px;height:18px;padding:0;border:none;border-radius:50%;background:var(--dsw-alias-button-contrast-fill);color:var(--dsw-alias-label-primary-inverted,#fff);opacity:0;cursor:pointer;font-size:11px;line-height:1;transition:opacity .2s ease-in-out}
+.ofd-pv-image:hover .ofd-pv-image-remove,.ofd-pv-image-remove:focus-visible{opacity:1}
+@media (pointer:coarse){.ofd-pv-image-remove{opacity:1}}
+.ofd-pv-lightbox{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:32px;background:var(--dsw-alias-bg-overlay,rgba(0,0,0,.72));cursor:zoom-out}
+.ofd-pv-lightbox-img{max-width:100%;max-height:100%;object-fit:contain;border-radius:var(--dsw-radius-lg);cursor:default}
+.ofd-pv-lightbox-close{position:absolute;top:16px;right:16px;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:none;border-radius:50%;background:var(--dsw-alias-button-contrast-fill);color:var(--dsw-alias-label-primary-inverted,#fff);font-size:14px;line-height:1;cursor:pointer}
 .ofd-pv-card{box-sizing:border-box;position:relative;display:inline-flex;align-items:center;gap:10px;width:240px;height:64px;padding:0 12px;border:.5px solid var(--dsw-alias-border-l2,#0000001f);border-radius:var(--dsw-radius-lg);background:var(--dsw-specific-input-major,var(--dsw-alias-bg-layer-2));text-align:left}
 .ofd-pv-card[data-state=error]{border-color:var(--dsw-alias-state-error-primary)}
 .ofd-pv-card-icon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-primary-inverted,#fff);font-family:var(--ds-font-family-code,monospace);font-size:9px;font-weight:700}

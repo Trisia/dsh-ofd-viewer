@@ -77,10 +77,23 @@
     "@deepseek-ai/schemastery": "^3.18.5",
     "@types/node": "^24.7.0",
     "@types/react": "^19.1.0",
+    "@types/react-dom": "^18.3.7",
     "esbuild": "^0.28.2",
     "typescript": "~5.9.3"
   },
   "dependencies": {
     "@ofdrw/ofdrw-viewer-ui": "^0.1.7"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-client-ui-sidebar-documentpreview": ">=0.2.0-0 <0.3.0-0",
+    "@deepseek-ai/dsh-web-app": ">=0.2.0-0 <0.3.0-0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-client-ui-sidebar-documentpreview": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-web-app": {
+      "optional": true
+    }
   }
 }

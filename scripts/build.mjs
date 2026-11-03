@@ -63,11 +63,12 @@ const HOST_MODULES = {
       path: args.path,
       namespace: args.path === 'react/jsx-runtime' ? 'host-jsx' : 'host-require',
     }))
-    buildApi.onLoad({ filter: /.*/, namespace: 'host-require' }, () => ({
+    buildApi.onLoad({ filter: /.*/, namespace: 'host-require' }, (args) => ({
       loader: 'js',
       contents: [
-        `const m = __dshRequire('react');`,
+        `const m = __dshRequire(${JSON.stringify(args.path)});`,
         `export default m;`,
+        // 按模块转发全部导出：react 与 react-dom 的成员都由宿主模块表提供
         `export const Component = m.Component;`,
         `export const Fragment = m.Fragment;`,
         `export const createElement = m.createElement;`,
@@ -75,6 +76,10 @@ const HOST_MODULES = {
         `export const useLayoutEffect = m.useLayoutEffect;`,
         `export const useRef = m.useRef;`,
         `export const useState = m.useState;`,
+        `export const useCallback = m.useCallback;`,
+        `export const useMemo = m.useMemo;`,
+        `export const createPortal = m.createPortal;`,
+        `export const flushSync = m.flushSync;`,
       ].join('\n'),
     }))
     buildApi.onLoad({ filter: /.*/, namespace: 'host-jsx' }, () => ({

@@ -30,12 +30,23 @@ test('cordis.patch.yml 插入唯一插件行', () => {
   assert.match(patch, /name: '@cliven\/dsh-ofd-viewer'/)
 })
 
-test('侧栏文档预览行先于本插件插入，保证 documentPreviews 已就绪', () => {
-  const patch = readFileSync(join(root, 'cordis.patch.yml'), 'utf8')
-  const preview = patch.indexOf('id: ui-sidebar-documentpreview')
-  const self = patch.indexOf("id: '@cliven/dsh-ofd-viewer'")
-  assert.ok(preview >= 0, 'cordis.patch.yml 需要插入侧栏文档预览行')
-  assert.ok(preview < self, '侧栏文档预览行必须排在本插件行之前')
+test('不重复插入宿主自带的侧栏文档预览行，保证组合包可卸载', () => {
+  // 只检查条目行，注释里出现的名字不算引用。
+  const rows = readFileSync(join(root, 'cordis.patch.yml'), 'utf8')
+    .split('\n')
+    .filter((line) => !line.trimStart().startsWith('#'))
+    .join('\n')
+  // ui-sidebar-documentpreview 由宿主 @deepseek-ai/dsh-web-app 的补丁层无条件插入。
+  // 本包若再 insert 一次，该宿主组件会计入本包的组件清单，卸载时 plugin-manager
+  // 判定「组合包的组件仍在运行」并抛 bundle-in-use，插件将永远无法移除。
+  assert.ok(
+    !rows.includes('ui-sidebar-documentpreview'),
+    'cordis.patch.yml 不得插入宿主的侧栏文档预览行，否则插件无法卸载',
+  )
+  assert.ok(
+    !rows.includes('@deepseek-ai/dsh-client-ui-sidebar-documentpreview'),
+    'cordis.patch.yml 不得引用宿主的侧栏文档预览包，否则插件无法卸载',
+  )
 })
 
 test('宿主 SDK 包不能出现在 dependencies 里', () => {

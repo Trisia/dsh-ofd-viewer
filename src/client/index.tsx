@@ -174,6 +174,7 @@ function apply(ctx: ClientContext): void {
             onRemoveAttachment: props.onRemoveAttachment,
             uploads: props.uploads ?? {},
             onRetryFile: props.onRetryFile,
+            dropLimits: props.dropLimits,
             t,
             openOfd: (file) => {
               // 附件栏的 sessionId 是当前会话；面板按同一标识读取待预览文件
