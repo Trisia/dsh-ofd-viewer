@@ -29,6 +29,9 @@ Thumbs.db
 coverage/
 *.tsbuildinfo
 
+# pnpm pack 产物（本地打包与 CI 发布 Release 附件都用这个目录）
+dist/
+
 # 本地测试残留（Playwright 日志/快照、临时缓存与脚本）
 .playwright-cli/
 .tmp/

@@ -4,6 +4,7 @@
 # 未列出的依赖一律不允许执行安装脚本（strictDepBuilds 默认开启，遇到未审批的脚本会直接失败）。
 allowBuilds:
   esbuild: true
+  koffi: false
 
 # pnpm 默认要求依赖发布满 1440 分钟才可安装，用于降低供应链投毒风险。
 # 本项目依赖的 @ofdrw/* 是刚发布的 0.1.7，这里按包名例外放行，保证 lockfile 可解析。

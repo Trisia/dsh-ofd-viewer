@@ -15,8 +15,9 @@ concurrency:
   cancel-in-progress: false
 
 # 校验只需要读取仓库内容；npm 鉴权走 NPM_TOKEN，不依赖 GITHUB_TOKEN 的写权限。
+# 末尾创建 GitHub Release 需要 contents: write（GITHUB_TOKEN 仅用于发布日志，不用于 npm）。
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   publish:
@@ -82,3 +83,32 @@ jobs:
         run: pnpm publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # 重新打一次包作为 Release 附件，供不希望走 npm 的用户直接下载安装。
+      # 与 Publish to npm 使用同一份 package.json 与同一套 prepack 构建，内容与 npm 上的一致。
+      - name: Pack tarball
+        if: startsWith(github.ref, 'refs/tags/')
+        run: pnpm pack --pack-destination dist
+
+      # 发布日志在 npm 发布成功之后才落地：npm 失败时不会留下「已发布」的 Release。
+      # github.ref 在非 tag 触发（手动在默认分支重跑）时是 refs/heads/*，此时跳过创建。
+      # --generate-notes 的区间由上一个 tag 到当前 tag 决定；仓库首个 tag 没有上一个 tag，
+      # 区间会为空，因此把起始点显式定为根提交，保证首个版本也能列出全部提交。
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          prev="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
+          if [ -z "${prev}" ]; then
+            prev="$(git rev-list --max-parents=0 HEAD)"
+            echo "仓库首个 tag，发布日志从根提交 ${prev} 开始"
+          else
+            echo "发布日志区间：${prev}..${GITHUB_REF_NAME}"
+          fi
+          gh release create "${GITHUB_REF_NAME}" \
+            --verify-tag \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            --notes-start-tag "${prev}" \
+            dist/*.tgz
