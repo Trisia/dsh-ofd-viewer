@@ -68,6 +68,16 @@ test('宿主半产物只保留 DSH 运行时提供的裸 import', () => {
   assert.ok(!bare.includes('@deepseek-ai/dsh-llm'), 'dsh-llm 不应被保留为裸 import')
 })
 
+test('宿主 peer 下限不低于 0.2.1，且 devDependencies 精确锁定同一版本', () => {
+  const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+  // 下限写 0.2.0 时 pnpm 会解析到最早的 0.2.0-rc.2，与本地实际运行的 0.2.1-rc.2 不一致。
+  for (const [name, range] of Object.entries(manifest.peerDependencies)) {
+    assert.equal(range, '>=0.2.1-0 <0.3.0-0', `${name} 的 peer 范围`)
+    // 精确版本让 lockfile 可复现，避免 minimumReleaseAge 拉到未固定的小版本。
+    assert.equal(manifest.devDependencies[name], '0.2.1-rc.2', `${name} 的 devDependencies 精确版本`)
+  }
+})
+
 test('中英文列表元数据齐全', () => {
   for (const locale of ['zh', 'en']) {
     const dict = JSON.parse(readFileSync(join(root, 'locale', `${locale}.json`), 'utf8'))
