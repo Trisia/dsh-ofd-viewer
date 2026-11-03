@@ -1,7 +1,7 @@
 {
   "name": "@cliven/dsh-ofd-viewer",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "description": "OFD document preview for DSH: read OFD in the Sidebar, the OFD panel and composer attachments, plus an ofd_read tool",
   "license": "MIT",
