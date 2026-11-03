@@ -6,6 +6,7 @@
  * 读数订阅官方事件，因此不需要访问私有外壳。
  */
 import type { ReactNode } from 'react'
+import type { LocalFontsStatus } from '@ofdrw/ofdrw-viewer-ui'
 import { requireModule } from '../../commonjs.js'
 import type { ViewerInstance } from './ViewerSurface.js'
 
@@ -125,6 +126,20 @@ export interface ViewerToolbarLabels {
   exitFullscreen: string
   /** 内嵌 */
   inline: string
+  /** 本机字体开关 */
+  localFonts: string
+  /** 本机字体开关提示：当前状态 */
+  'localFonts.hint': string
+  /** 本机字体提示：已生效 */
+  'localFonts.enabled': string
+  /** 本机字体提示：等待浏览器授权 */
+  'localFonts.prompt': string
+  /** 本机字体提示：已被浏览器拒绝授权 */
+  'localFonts.denied': string
+  /** 本机字体提示：浏览器不支持 */
+  'localFonts.unsupported': string
+  /** 本机字体提示：正在申请授权 */
+  'localFonts.loading': string
   /** 关闭 */
   close: string
   /** 关闭 OFD 预览 */
@@ -142,6 +157,23 @@ const ZOOM_MODES: readonly (readonly [ZoomMode, string])[] = [
 /** 会改变工具栏读数的阅读器事件。 */
 const STATE_EVENTS = ['statechange', 'featureschange'] as const
 
+/** 本机字体开关尚未取到状态时的占位值：不可见。 */
+const LOCAL_FONTS_HIDDEN: LocalFontsStatus = { supported: false, enabled: false, userState: 'off', permission: 'unsupported', visible: false, loading: false }
+
+/**
+ * 取本机字体提示文案。
+ *
+ * @param status 本机字体状态
+ * @param labels 工具栏文案
+ * @returns 提示文案
+ */
+function localFontsHint(status: LocalFontsStatus, labels: ViewerToolbarLabels): string {
+  if (!status.supported) return labels['localFonts.unsupported']
+  if (status.enabled) return labels['localFonts.enabled']
+  if (status.permission === 'denied') return labels['localFonts.denied']
+  return labels['localFonts.prompt']
+}
+
 /**
  * 工具栏。
  *
@@ -158,6 +190,7 @@ export function ViewerToolbar(props: ViewerToolbarProps): ReactNode {
   const [scale, setScale] = useState(1)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
+  const [localFonts, setLocalFonts] = useState<LocalFontsStatus>(LOCAL_FONTS_HIDDEN)
   const pageInput = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -186,6 +219,16 @@ export function ViewerToolbar(props: ViewerToolbarProps): ReactNode {
     return () => {
       for (const off of offs) off()
     }
+  }, [viewer])
+
+  useEffect(() => {
+    if (viewer === null) {
+      setLocalFonts(LOCAL_FONTS_HIDDEN)
+      return undefined
+    }
+    // 官方只在状态变化后广播，先取一次初始快照再订阅
+    setLocalFonts(viewer.getLocalFontsStatus())
+    return viewer.onLocalFontsStatusChange((status) => setLocalFonts(status))
   }, [viewer])
 
   /**
@@ -246,8 +289,26 @@ export function ViewerToolbar(props: ViewerToolbarProps): ReactNode {
     void (sidebarOpen ? viewer.closeSidebar() : viewer.openSidebar('thumbnails'))
   }
 
+  /**
+   * 切换「使用本机字体」开关。
+   *
+   * 浏览器只接受用户手势内的权限申请，因此必须在点击事件的同步栈里调用；
+   * 授权成功后阅读器会自行重开文档，失败则开关回到关闭态。
+   *
+   * @returns 无返回值
+   */
+  const toggleLocalFonts = (): void => {
+    if (viewer === null || localFonts.loading) return
+    void viewer.setLocalFontsEnabled(!localFonts.enabled).catch((cause: unknown) => {
+      console.warn('[ofd-viewer] toggle local fonts failed', cause)
+    })
+  }
+
   const total = pageCount > 0 ? pageCount : 0
   const current = open ? Math.min(Math.max(pageNumber, 1), Math.max(total, 1)) : 1
+  // 宿主未启用本机字体能力或浏览器不支持时不显示开关
+  const showLocalFonts = localFonts.visible && localFonts.supported
+  const localFontsTitle = `${labels.localFonts} — ${localFontsHint(localFonts, labels)}`
 
   return (
     <div className="ofd-pv-head">
@@ -308,6 +369,20 @@ export function ViewerToolbar(props: ViewerToolbarProps): ReactNode {
         <button type="button" className="ofd-pv-tool" aria-label={labels.find} title={labels.find} disabled={!open} onClick={() => void viewer?.find('')}>
           ⌕
         </button>
+        {showLocalFonts && (
+          <button
+            type="button"
+            className="ofd-pv-tool ofd-pv-tool-text"
+            aria-label={labels.localFonts}
+            aria-pressed={localFonts.enabled}
+            aria-busy={localFonts.loading}
+            title={localFontsTitle}
+            disabled={!open || localFonts.loading}
+            onClick={toggleLocalFonts}
+          >
+            {labels.localFonts}
+          </button>
+        )}
         <button type="button" className="ofd-pv-tool" aria-label={labels.print} title={labels.print} disabled={!open} onClick={() => void viewer?.print()}>
           ⎙
         </button>

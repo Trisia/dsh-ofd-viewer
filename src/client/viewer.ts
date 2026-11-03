@@ -2,7 +2,7 @@
  * 官方 @ofdrw/ofdrw-viewer-ui 的按需加载与实例生命周期。
  * 阅读器与样式都是动态 import 的独立静态文件，首次使用时才下载。
  */
-import type { OFDViewer, OFDViewerOptions } from '@ofdrw/ofdrw-viewer-ui'
+import type { LocalFontsStatus, OFDViewer, OFDViewerOptions } from '@ofdrw/ofdrw-viewer-ui'
 import { mountViewerStyles } from './styles.js'
 
 /** 字体路由前缀，与宿主半（src/host/index.ts）保持一致。 */
@@ -16,6 +16,12 @@ export interface OfdViewerInstance {
   destroy(): void
   /** 阅读器根节点（带 `.ofd-viewer` 类） */
   getRoot(): HTMLElement
+  /** 读取本机字体状态；纯查询，不申请浏览器授权 */
+  getLocalFontsStatus(): LocalFontsStatus
+  /** 设置「使用本机字体」开关；开启方向会申请浏览器授权并重开文档 */
+  setLocalFontsEnabled(enabled: boolean): Promise<void>
+  /** 订阅本机字体状态变化，返回退订函数 */
+  onLocalFontsStatusChange(handler: (status: LocalFontsStatus) => void): () => void
 }
 
 /** 官方阅读器模块中本插件用到的部分（其余导出不使用）。 */
@@ -54,6 +60,7 @@ function loadViewerCss(): Promise<string> {
 
 /**
  * 构造阅读器选项：功能全开，字体走宿主路由，缺字回退到内置思源宋体/黑体。
+ * 本机字体能力开启且默认启用：授权后按文档声明优先使用本机已安装的同名字体。
  *
  * @param container 挂载点
  * @param source OFD 字节
@@ -75,6 +82,14 @@ function viewerOptions(container: HTMLElement, source: Uint8Array): OFDViewerOpt
         ['宋体', 'simsun', 'nsimsun', 'notoserifcjksc', 'sourcehanserifsc', 'stsong'],
         ['黑体', 'simhei', 'microsoftyahei', '微软雅黑', 'notosanscjksc', 'sourcehansanssc'],
       ],
+      localFonts: {
+        // 启用本机字体能力（浏览器 Local Font Access API），开关才能显示
+        enabled: true,
+        // 首次使用时默认尝试启用；浏览器授权失败时自动回到内置字体
+        defaultEnabled: true,
+        // 用户的手动选择记在 localStorage，下次打开时沿用
+        remember: true,
+      },
     },
     onError: (info: { code?: string; message?: string }) => console.warn('[ofd-viewer] error', info.code, info.message),
     debug: { console: false },

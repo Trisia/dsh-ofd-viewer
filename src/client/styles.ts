@@ -17,6 +17,8 @@ const PLUGIN_CSS = `
 .ofd-pv-tool:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .ofd-pv-tool:disabled{opacity:.4;cursor:default}
 .ofd-pv-tool[aria-expanded=true],.ofd-pv-tool[aria-pressed=true]{color:var(--dsw-alias-brand-primary)}
+.ofd-pv-tool[aria-pressed=true]{background:var(--dsw-alias-brand-primary-soft,transparent)}
+.ofd-pv-tool-text{font-size:12px;padding:0 8px;white-space:nowrap}
 .ofd-pv-page{display:inline-flex;align-items:center;gap:4px;flex:none}
 .ofd-pv-page-input{width:44px;height:28px;box-sizing:border-box;padding:0 4px;border:.5px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;text-align:center}
 .ofd-pv-page-input::-webkit-outer-spin-button,.ofd-pv-page-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
