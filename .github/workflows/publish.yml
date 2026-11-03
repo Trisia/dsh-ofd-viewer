@@ -92,8 +92,9 @@ jobs:
 
       # 发布日志在 npm 发布成功之后才落地：npm 失败时不会留下「已发布」的 Release。
       # github.ref 在非 tag 触发（手动在默认分支重跑）时是 refs/heads/*，此时跳过创建。
-      # --generate-notes 的区间由上一个 tag 到当前 tag 决定；仓库首个 tag 没有上一个 tag，
-      # 区间会为空，因此把起始点显式定为根提交，保证首个版本也能列出全部提交。
+      # --generate-notes 的区间由上一个 tag 到当前 tag 决定。仓库首个 tag 没有上一个 tag，
+      # 此时不能传 --notes-start-tag：该参数只接受 tag 名，传提交 SHA 会被 GitHub 拒绝（HTTP 400），
+      # 省略后 GitHub 自动从首个提交开始生成，首个版本同样能列出全部提交。
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         env:
@@ -101,14 +102,18 @@ jobs:
         run: |
           prev="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
           if [ -z "${prev}" ]; then
-            prev="$(git rev-list --max-parents=0 HEAD)"
-            echo "仓库首个 tag，发布日志从根提交 ${prev} 开始"
+            echo "仓库首个 tag，发布日志覆盖全部提交"
+            gh release create "${GITHUB_REF_NAME}" \
+              --verify-tag \
+              --title "${GITHUB_REF_NAME}" \
+              --generate-notes \
+              dist/*.tgz
           else
             echo "发布日志区间：${prev}..${GITHUB_REF_NAME}"
+            gh release create "${GITHUB_REF_NAME}" \
+              --verify-tag \
+              --title "${GITHUB_REF_NAME}" \
+              --generate-notes \
+              --notes-start-tag "${prev}" \
+              dist/*.tgz
           fi
-          gh release create "${GITHUB_REF_NAME}" \
-            --verify-tag \
-            --title "${GITHUB_REF_NAME}" \
-            --generate-notes \
-            --notes-start-tag "${prev}" \
-            dist/*.tgz
