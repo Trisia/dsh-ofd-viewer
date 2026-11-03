@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Read OFD documents right inside DSH</strong><br>
-  OFD (GB/T 33190 page-oriented document) preview for DeepSeek Harness Web: open OFD from the Sidebar, a standalone panel and composer attachments, and let the model read OFD with the <code>ofd_read</code> tool.
+  OFD (GB/T 33190 page-oriented document) preview for DeepSeek Harness Web: open OFD from the Sidebar and composer attachments, and let the model read OFD with the <code>ofd_read</code> tool.
 </p>
 
 <p align="center">
@@ -32,8 +32,6 @@ just binary. With it installed:
   reference. It sits beside the PDF and Word previews and uses the same preview framework.
 - **Preview drafts first**: the composer attachment card carries a **View** button, so a file can be
   read before it is ever submitted to the model.
-- **Standalone OFD panel**: pick any local OFD with `＋` in the panel header; toggle between full
-  width and an inline card layout.
 - **Readable by the model**: the `ofd_read` tool returns the page count, version, document info and
   the text of each page, so "what is the amount on this invoice?" works without rendering.
 - **Everything enabled**: continuous scrolling, zoom/rotate, page jump, thumbnails, outline,
@@ -54,6 +52,12 @@ In DSH, open **Settings → Plugins → Add plugin** and enter the package name 
 @cliven/dsh-ofd-viewer@0.1.0
 ```
 
+The install dialog:
+
+<p align="center">
+  <img src="./docs/plugin-install.png" alt="The DSH Add plugin dialog with @cliven/dsh-ofd-viewer typed into the input field, the install-source selector and the Install button below" width="100%">
+</p>
+
 Or install from the command line:
 
 ```bash
@@ -63,6 +67,12 @@ dsh plugin --profile web add @cliven/dsh-ofd-viewer@0.1.0
 The version is pinned to the current release (`0.1.0` right now); to upgrade, replace the number
 after `@`.
 
+Offline install (download the tgz from [Releases](https://github.com/Trisia/dsh-ofd-viewer/releases)):
+
+```bash
+dsh plugin --profile web add /absolute/path/cliven-dsh-ofd-viewer-0.1.0.tgz
+```
+
 Restart the DSH Web server and refresh the page afterwards: the client boot graph is composed when
 the process starts, so a running process does not pick up a new plugin by itself.
 
@@ -71,12 +81,11 @@ To build from source and link it into a local profile, see
 
 ## Usage
 
-### Three entry points
+### Two entry points
 
 | Entry | How | Notes |
 | --- | --- | --- |
 | **Composer attachment** | Drop or pick a `.ofd`, then click **View** on the attachment card | Read a draft before it is submitted; pasted images keep their thumbnails |
-| **OFD panel** | `＋` in the panel header to pick a local file | Toggle between full width and an inline card |
 | **Sidebar document preview** | Click a `.ofd` in the file tree, a delivery card or an `@file` reference | Sits beside PDF/Word previews and reuses the same framework |
 
 The draft attachment entry point:
@@ -84,17 +93,6 @@ The draft attachment entry point:
 <p align="center">
   <img src="./docs/composer-attachment.png" alt="An OFD attachment card above the composer: OFD icon, file name and size, a View button and a remove button" width="100%">
 </p>
-
-### Reader controls
-
-| Action | Effect |
-| --- | --- |
-| Wheel / drag | Continuous scrolling through pages |
-| Thumbnails, outline, bookmarks | Left rail; click to jump |
-| Layers, signatures, attachments | Right rail; signatures support overlay verification |
-| Full-text search | Toolbar search box; matches are highlighted and jumpable |
-| Text selection | Select and copy text from the page |
-| Print, export | Print the document, export images, export the raw OFD |
 
 ### The `ofd_read` tool
 
@@ -110,24 +108,6 @@ The tool the model calls:
 
 It returns the page count, OFD version, document info (DocInfo), `returnedPages`, the text of each
 page and any entries that failed to decompress.
-
-**Long pages lose nothing**: a page longer than `maxCharsPerPage` comes back in segments, and each
-page carries `offset` (the character position this segment starts at), `totalChars` (the page
-length), `hasMore`, and a `next` value to feed straight back into `pages`:
-
-```json
-{ "page": 4, "offset": 1, "totalChars": 5170, "hasMore": true, "next": "4#4001-5170" }
-```
-
-Passing `next` back reads the rest of that page; concatenated in order, the segments equal the whole
-page. Characters are counted as Unicode code points, so rare CJK characters and emoji count as one
-character and no character is ever split in half.
-
-## More
-
-- Data flow, slots and design trade-offs: [design notes](./docs/DESIGN.md)
-- Build, release and debugging: [Development](./docs/DEVELOPMENT.md)
-- Missing preview, missing glyphs, dark theme: [FAQ](./docs/FAQ.md)
 
 ## License
 
